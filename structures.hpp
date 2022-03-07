@@ -24,7 +24,7 @@ public:
 	span<Film*> enSpan() const;
 	int size() const { return nElements; };
 	Film* operator[](int index) { return elements[index]; };
-	const Film* trouverFilm(const function<bool(Film)>& critere);
+	Film* trouverFilm(const function<bool(Film)>& critere);
 
 private:
 	void changeDimension(int nouvelleCapacite);
@@ -116,33 +116,154 @@ private:
 };
 using ListeActeurs = Liste<Acteur>;
 
-struct Film
+class Item
 {
-	std::string titre = "", realisateur = ""; // Titre et nom du réalisateur (on suppose qu'il n'y a qu'un réalisateur).
-	int anneeSortie = 0, recette = 0; // Année de sortie et recette globale du film en millions de dollars
-	ListeActeurs acteurs;
-	Film() = default;
+private:
+	std::string titre_ = "";
+	int annee_ = 0;
+public:
+	Item() {};
+	Item(std::string titre, int annee):titre_(titre), annee_(annee) {};
+	std::string lireTitre()
+	{
+		return titre_;
+	};
+	int lireAnnee()
+	{
+		return annee_;
+	};
+	void modifierTitre(std::string nouveau)
+	{
+		titre_ = nouveau;
+	};
+	void modifierAnnee(int nouvelle)
+	{
+		annee_ = nouvelle;
+	}
+};
+
+class Livre : public Item
+{
+private:
+	std::string auteur_ = "";
+	int ventes_ = 0;
+	int pages_ = 0;
+public:
+	Livre():Item() {};
+	Livre(std::string titre, int annee, std::string auteur, int ventes, int pages):
+		Item(titre,annee), 
+		auteur_(auteur), 
+		ventes_(ventes), 
+		pages_(pages) 
+	{};
+	std::string lireAuteur()
+	{
+		return auteur_;
+	};
+	int lireVentes()
+	{
+		return ventes_;
+	};
+	int lirePages()
+	{
+		return pages_;
+	};
+	void modifierAuteur(std::string nouveau)
+	{
+		auteur_ = nouveau;
+	};
+	void modifierVentes(int nouvelle)
+	{
+		ventes_ = nouvelle;
+	}
+	void modifierPages(int nouvelle)
+	{
+		pages_ = nouvelle;
+	}
+};
+class Film : public Item
+{
+private:
+	std::string realisateur_ = "";
+	int recette_ = 0;
+	ListeActeurs acteurs_ = ListeActeurs();
+public:
+	Film() :Item() {};
+	Film(std::string titre, int annee, std::string realisateur, int recette, ListeActeurs acteurs) :
+		Item(titre, annee),
+		realisateur_(realisateur),
+		recette_(recette),
+		acteurs_(acteurs)
+	{};
 	Film(const Film& autre)
 	{
-		titre = autre.titre;
-		realisateur = autre.titre;
-		anneeSortie = autre.anneeSortie;
-		recette = autre.recette;
-		acteurs = ListeActeurs(autre.acteurs);
+		realisateur_ = autre.realisateur_;
+		recette_ = autre.recette_;
+		acteurs_ = ListeActeurs(autre.acteurs_);
 	}
 	Film& operator=(const Film&& autre)
 	{
 		if (this != &autre)
 		{
-			titre = autre.titre;
-			realisateur = autre.titre;
-			anneeSortie = autre.anneeSortie;
-			recette = autre.recette;
-			acteurs = ListeActeurs(autre.acteurs);
+			realisateur_ = autre.realisateur_;
+			recette_ = autre.recette_;
+			acteurs_ = ListeActeurs(autre.acteurs_);
 		}
 		return *this;
 	}
+	std::string lireRealisateur() 
+	{
+		return realisateur_;
+	};
+	int lireRecette() const
+	{
+		return recette_;
+	};
+	ListeActeurs lireActeurs() 
+	{
+		return acteurs_;
+	};
+	void modifierRealisateur(std::string nouveau) 
+	{
+		realisateur_ = nouveau;
+	};
+	void modifierRecette(int nouvelle) 
+	{
+		recette_ = nouvelle;
+	}
+	void modifierActeurs(ListeActeurs nouvelle) 
+	{
+		acteurs_ = ListeActeurs(nouvelle);
+	}
 };
+
+//struct Film
+//{
+//	std::string titre = "", realisateur = ""; // Titre et nom du réalisateur (on suppose qu'il n'y a qu'un réalisateur).
+//	int anneeSortie = 0, recette = 0; // Année de sortie et recette globale du film en millions de dollars
+//	ListeActeurs acteurs;
+//	Film() = default;
+//	Film(const Film& autre)
+//	{
+//		titre = autre.titre;
+//		realisateur = autre.realisateur;
+//		anneeSortie = autre.anneeSortie;
+//		recette = autre.recette;
+//		acteurs = ListeActeurs(autre.acteurs);
+//	}
+//	Film& operator=(const Film&& autre)
+//	{
+//		if (this != &autre)
+//		{
+//			titre = autre.titre;
+//			realisateur = autre.realisateur;
+//			anneeSortie = autre.anneeSortie;
+//			recette = autre.recette;
+//			acteurs = ListeActeurs(autre.acteurs);
+//		}
+//		return *this;
+//	}
+//};
 
 struct Acteur
 {

@@ -102,9 +102,9 @@ void ListeFilms::enleverFilm(const Film* film)
 //NOTE: Doit retourner un Acteur modifiable, sinon on ne peut pas l'utiliser pour modifier l'acteur tel que demandé dans le main, et on ne veut pas faire écrire deux versions.
 shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const
 {
-	for (const Film* film : enSpan())
+	for (Film* film : enSpan())
 	{
-		for (shared_ptr<Acteur>& acteur :film->acteurs.enSpan())
+		for (shared_ptr<Acteur>& acteur :film->lireActeurs().enSpan())
 		{
 			if (acteur->nom == nomActeur)
 			{
@@ -115,9 +115,9 @@ shared_ptr<Acteur> ListeFilms::trouverActeur(const string& nomActeur) const
 	return nullptr;
 }
 
-const Film* ListeFilms::trouverFilm(const function<bool(Film)>& critere)
+Film* ListeFilms::trouverFilm(const function<bool(Film)>& critere)
 {
-	for (const Film* film : enSpan())
+	for (Film* film : enSpan())
 	{
 		if (critere(*film))
 		{
@@ -150,25 +150,25 @@ shared_ptr<Acteur> lireActeur(istream& fichier, ListeFilms& listeFilms)
 Film* lireFilm(istream& fichier, ListeFilms& listeFilms
 )
 {
-	Film* film = new Film();
-	film->titre       = lireString(fichier);
-	film->realisateur = lireString(fichier);
-	film->anneeSortie = lireUint16 (fichier);
-	film->recette     = lireUint16 (fichier);
+	Film film;
+	film.modifierTitre(lireString(fichier));
+	film.modifierRealisateur(lireString(fichier));
+	film.modifierAnnee(lireUint16(fichier));
+	film.modifierRecette(lireUint16(fichier));
 	int nombre = lireUint8(fichier);
-	film->acteurs = ListeActeurs(nombre, nombre);
+	film.modifierActeurs(ListeActeurs(nombre, nombre));
+	Film* filmp = new Film(film);
+	cout << "Création Film " << film.lireTitre() << endl;
+	film.modifierActeurs(ListeActeurs(film.lireActeurs().lireCapacite(), film.lireActeurs().lireNElements()));
 
-	cout << "Création Film " << film->titre << endl;
-	film->acteurs = ListeActeurs(film->acteurs.lireCapacite(), film->acteurs.lireNElements());
-
-	for (shared_ptr<Acteur>& acteur : film->acteurs.enSpan()) 
+	for (shared_ptr<Acteur>& acteur : film.lireActeurs().enSpan()) 
 	{
 		acteur = lireActeur(fichier, listeFilms);
 		//TODO: Placer l'acteur au bon endroit dans les acteurs du film.
 		//TODO: Ajouter le film à la liste des films dans lesquels l'acteur joue.
 		//acteur->joueDans.ajouterFilm(filmp);
 	}
-	return film;
+	return filmp;
 	return {}; //TODO: Retourner le pointeur vers le nouveau film.
 }
 
@@ -219,7 +219,7 @@ ListeFilms::ListeFilms(const string& nomFichier) : possedeLesFilms_(true)
 
 void detruireFilm(Film* film)
 {
-	for (shared_ptr<Acteur> acteur : film->acteurs.enSpan())
+	for (shared_ptr<Acteur> acteur : film->lireActeurs().enSpan())
 	{
 		cout << "Le nombre d'utilisations du pointeur pour l'acteur " << acteur->nom << " est de " << acteur.use_count() << endl;
 		//if (acteur.use_count() == 0)
@@ -231,7 +231,7 @@ void detruireFilm(Film* film)
 	// 	if (!joueEncore(acteur))
 	// 		detruireActeur(acteur);
 	}
-	cout << "Destruction Film " << film->titre << endl;
+	cout << "Destruction Film " << film->lireTitre() << endl;
 	// delete[] film->acteurs.getElements();
 	delete film;
 }
@@ -254,18 +254,18 @@ ListeFilms::~ListeFilms()
 
 //TODO: Une fonction pour afficher un film avec tous ces acteurs (en utilisant la fonction afficherActeur ci-dessus).
 
-ostream& operator<<(ostream& o, const Film& film) 
+ostream& operator<<(ostream& o,  Film& film) 
 {
-	o << "Titre: " << film.titre << endl;
-	o << "  Réalisateur: " << film.realisateur << endl;
-	o << "  Recette: " << film.recette << "M$ " << endl;
+	o << "Titre: " << film.lireTitre() << endl;
+	o << "  Réalisateur: " << film.lireRealisateur() << endl;
+	o << "  Recette: " << film.lireRecette() << "M$ " << endl;
 	o << "Acteurs:" << endl;
-	for (const shared_ptr<Acteur>& acteur : film.acteurs.enSpan())
+	for (const shared_ptr<Acteur>& acteur : film.lireActeurs().enSpan())
 		o << "  " << acteur->nom << ", " << acteur->anneeNaissance << " " << acteur->sexe << endl;
 	return o;
 } 
 
-void afficherFilm(const Film& film)
+void afficherFilm(Film& film)
 {
 	cout << film << endl;
 }
@@ -276,7 +276,7 @@ void afficherListeFilms(const ListeFilms& listeFilms)
 	static const string ligneDeSeparation = "\033[32m────────────────────────────────────────\033[0m\n";
 	cout << ligneDeSeparation;
 	//TODO: Changer le for pour utiliser un span.
-	for (const Film* film : listeFilms.enSpan())
+	for (Film* film : listeFilms.enSpan())
 	{
 		//TODO: Afficher le film.
 		cout << *film << endl;
@@ -335,7 +335,7 @@ int main()
 	cout << "Chapitre 10" << endl;
 	cout << ligneDeSeparation << endl;
 	cout << "Voici le film correspondant au critere demande (devrait etre Le Hobbit) :" << endl;
-	auto filmCritere = listeFilms.trouverFilm([](const Film film) {return film.recette == 955; });
+	auto filmCritere = listeFilms.trouverFilm([](const Film film) {return film.lireRecette() == 955; });
 	cout << *filmCritere << endl;
 	cout << ligneDeSeparation << endl;
 
@@ -348,11 +348,11 @@ int main()
 
 	Film skylien = *listeFilms[0];
 	// Changer le titre du film skylien pour "Skylien".
-	skylien.titre = "Skylien";
+	skylien.lireTitre() = "Skylien";
 	// Changer le premier acteur du film skylien pour le premier acteur de listeFilms[1].
-	skylien.acteurs[0] = listeFilms[1]->acteurs[0];
+	skylien.lireActeurs()[0] = listeFilms[1]->lireActeurs()[0];
 	// Changer le nom du premier acteur de skylien pour son nom complet "Daniel Wroughton Craig".
-	skylien.acteurs[0]->nom = "Daniel Wroughton Craig";
+	skylien.lireActeurs()[0]->nom = "Daniel Wroughton Craig";
 	// Afficher skylien, listeFilms[0] et listeFilms[1], pour voir que Alien n’a pas été modifié, que skylien a bien l’acteur modifié et que listeFilms[1] a aussi l’acteur modifié puisque les films devraient partager le même acteur.
 	cout << "Voici le film Skylien: " << endl;
 	cout << skylien << endl;
@@ -392,4 +392,6 @@ int main()
 	cout << *listeTextes2[1] << endl;
 
 	cout << ligneDeSeparation << endl;
+	Livre iBook("I, Justine", 2014, "Justine Ezarik", 999, 256);
+	cout << "real literature: " << iBook.lireTitre() << " by " << iBook.lireAuteur() << endl;
 }
